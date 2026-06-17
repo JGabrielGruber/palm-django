@@ -20,11 +20,15 @@ from palm_django.management.palm_cli import (
     write_job_summary,
 )
 from palm_django.management.quickstart import run_quickstart
+from palm_django.management.server import add_server_arguments, run_palm_server
 from palm_django.runtime import get_app, get_host
 
 
 class Command(BaseCommand):
-    help = "Palm Engine operator commands (doctor, quickstart, run, flow, instance, resource)."
+    help = (
+        "Palm Engine operator commands "
+        "(doctor, quickstart, server, run, flow, instance, resource)."
+    )
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         subparsers = parser.add_subparsers(dest="subcommand", required=True)
@@ -42,6 +46,20 @@ class Command(BaseCommand):
             action="store_true",
             help="Write palm_definitions.py for --app (fails if file exists).",
         )
+
+        server = subparsers.add_parser(
+            "server",
+            help="Start ServerRuntime with Palm Explorer (foreground).",
+        )
+        add_server_arguments(server)
+
+        host = subparsers.add_parser("host", help="ApplicationHost deployment modes.")
+        host_sub = host.add_subparsers(dest="host_command", required=True)
+        host_server = host_sub.add_parser(
+            "server",
+            help="Start ServerRuntime with Palm Explorer (foreground).",
+        )
+        add_server_arguments(host_server)
 
         run = subparsers.add_parser("run", help="Start a flow or process by name.")
         run.add_argument("ref", help="Flow or process name/id.")
@@ -98,6 +116,8 @@ class Command(BaseCommand):
         handlers = {
             "doctor": self._run_doctor,
             "quickstart": self._run_quickstart,
+            "server": self._run_server,
+            "host": self._run_host,
             "run": self._run_run,
             "flow": self._run_flow,
             "instance": self._run_instance,
@@ -107,6 +127,16 @@ class Command(BaseCommand):
         if handler is None:
             raise CommandError(f"Unknown palm subcommand: {subcommand!r}")
         handler(options)
+
+    def _run_server(self, options: dict[str, Any]) -> None:
+        run_palm_server(self, options)
+
+    def _run_host(self, options: dict[str, Any]) -> None:
+        command = options.get("host_command")
+        if command == "server":
+            run_palm_server(self, options)
+            return
+        raise CommandError(f"Unknown host command: {command!r}")
 
     def _run_run(self, options: dict[str, Any]) -> None:
         ensure_palm_runtime(self)

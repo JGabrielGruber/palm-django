@@ -202,6 +202,12 @@ flows = get_app().list_flows()
 python manage.py palm doctor
 python manage.py palm doctor --json
 
+# Palm Explorer (ServerRuntime + SSR hub) — foreground until Ctrl+C
+python manage.py palm server
+python manage.py palm host server          # alias
+python manage.py palm server --port 9000
+python manage.py palm server --host 0.0.0.0 --port 8080
+
 # Scaffold snippets
 python manage.py palm quickstart --app myapp
 
@@ -224,6 +230,17 @@ python manage.py palm instance resume <instance_id>
 ```
 
 Commands bootstrap Palm automatically and run against the active Django database.
+
+#### Palm Explorer server
+
+`palm server` starts a full `ServerRuntime` with the Palm Explorer SSR surface. It uses your Django database (ORM storage), discovered flows/resources, and `PALM_*` settings:
+
+```bash
+python manage.py palm server
+# Palm Explorer available at http://127.0.0.1:8080/explorer
+```
+
+Configure bind address via `PALM_SERVER_HOST` / `PALM_SERVER_PORT` or CLI `--host` / `--port`. Press Ctrl+C for graceful shutdown.
 
 ### 10. Django Admin
 
@@ -329,6 +346,8 @@ All fields from [`PalmSettings`](https://github.com/JGabrielGruber/palmengine) a
 | `storage_backend` | `django` | Django ORM via `palm_django` models |
 | `load_example_definitions` | `False` | Avoid Palm demo definitions in production |
 | `host_profile` | `all_in_one` | Collapsed embedded runtime |
+| `server_host` | `127.0.0.1` | Bind host for `palm server` |
+| `server_port` | `8080` | Bind port for `palm server` |
 | `default_scheduler` | `inline` | Synchronous in-process execution |
 
 ### palm-django integration settings
@@ -351,6 +370,7 @@ All fields from [`PalmSettings`](https://github.com/JGabrielGruber/palmengine) a
 | React to Palm writes | `@receiver(palm_resource_invoked)` |
 | React to direct ORM saves | `@receiver(palm_model_saved)` |
 | Ops / debugging | `python manage.py palm doctor` |
+| Browser Explorer | `python manage.py palm server` |
 | New project bootstrap | `python manage.py palm quickstart --app myapp` |
 
 ## Troubleshooting

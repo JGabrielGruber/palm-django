@@ -71,7 +71,7 @@ def test_palm_doctor_lists_operator_tools() -> None:
     call_command("palm", "doctor", stdout=out)
     output = out.getvalue()
     assert "[Operator Tools]" in output
-    assert "doctor, quickstart, run, flow, instance, resource" in output
+    assert "doctor, quickstart, server, host server, run, flow, instance, resource" in output
     assert "item_wizard" in output or "wizard flows" in output
 
 

@@ -11,6 +11,7 @@ import threading
 from typing import TYPE_CHECKING, Any
 
 from palm.app.host.application_host import ApplicationHost
+from palm.app.host.roles import HostProfile
 from palm.app.settings import PalmSettings
 
 from palm_django.discovery import DiscoveryReport, discover_and_register
@@ -86,6 +87,37 @@ class PalmRuntime:
                 )
             return self._host
 
+    def bootstrap_server(
+        self,
+        *,
+        host: str = "127.0.0.1",
+        port: int = 8080,
+        settings: PalmSettings | None = None,
+    ) -> ApplicationHost:
+        """Replace the process host with a ServerRuntime + Explorer profile."""
+        with self._lock:
+            if self._host is not None and self._host.is_started:
+                self._host.shutdown()
+            self._host = None
+            self._started = False
+            self._discovery = None
+
+            palm_settings = settings or get_palm_settings()
+            profile = HostProfile.server_only(host=host, port=port)
+            self._host = ApplicationHost(settings=palm_settings, profile=profile)
+            self._host.start()
+            self._started = True
+
+            integration = get_django_integration_settings()
+            self._discovery = discover_and_register(
+                self._host.app.repository(),
+                discovery_modules=integration["discovery_modules"],
+                discover_definitions=integration["discover_definitions"],
+                discover_resources=integration["discover_resources"],
+                discover_commit_handlers=integration["discover_commit_handlers"],
+            )
+            return self._host
+
     def shutdown(self) -> None:
         with self._lock:
             if self._host is not None and self._host.is_started:
@@ -105,6 +137,16 @@ def get_runtime() -> PalmRuntime:
 def bootstrap_palm(**options: Any) -> ApplicationHost:
     """Bootstrap the process-wide Palm host (idempotent)."""
     return _runtime.bootstrap(**options)
+
+
+def bootstrap_palm_server(
+    *,
+    host: str = "127.0.0.1",
+    port: int = 8080,
+    settings: PalmSettings | None = None,
+) -> ApplicationHost:
+    """Bootstrap Palm in server mode (ServerRuntime + Explorer)."""
+    return _runtime.bootstrap_server(host=host, port=port, settings=settings)
 
 
 def get_host() -> ApplicationHost:

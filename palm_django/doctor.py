@@ -109,7 +109,11 @@ def build_doctor_report(*, django_version: str) -> DoctorReport:
         (
             "Operator Tools",
             [
-                ("management commands", "doctor, quickstart, run, flow, instance, resource"),
+                (
+                    "management commands",
+                    "doctor, quickstart, server, host server, run, flow, instance, resource",
+                ),
+                ("server mode", "python manage.py palm server (Palm Explorer)"),
                 ("django admin", _admin_status()),
             ],
         )
@@ -196,8 +200,11 @@ def build_doctor_report(*, django_version: str) -> DoctorReport:
             "Decorate a model with `@as_palm_resource` or run `python manage.py palm quickstart`."
         )
     if report.ok:
+        bind_host = palm_config.get("server_host", "127.0.0.1")
+        bind_port = palm_config.get("server_port", 8080)
         report.tips.extend(
             [
+                f"Run `python manage.py palm server` for Explorer at http://{bind_host}:{bind_port}/explorer",
                 "Try `python manage.py palm flow list` to inspect registered flows.",
                 "Try `python manage.py palm resource invoke <app.model.action> --state '{...}'`.",
                 "Wrap multi-step work in `palm_atomic()` so Palm storage rolls back with Django.",
