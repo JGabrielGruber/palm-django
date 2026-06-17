@@ -11,6 +11,11 @@ from typing import Any
 from django.apps import apps
 from palm.common.persistence.definition_repository import DefinitionRepository
 
+from palm_django.resources.registry import (
+    list_registered_models,
+    register_discovered_model_resources,
+)
+
 
 @dataclass
 class DiscoveryReport:
@@ -20,6 +25,8 @@ class DiscoveryReport:
     definition_modules: list[str] = field(default_factory=list)
     resource_modules: list[str] = field(default_factory=list)
     commit_handler_modules: list[str] = field(default_factory=list)
+    django_model_resources: list[str] = field(default_factory=list)
+    django_models: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     @property
@@ -91,6 +98,15 @@ def discover_and_register(
                     report.commit_handler_modules.append(module_name)
             except Exception as exc:
                 report.errors.append(f"{module_name}: {exc}")
+
+    if discover_resources:
+        try:
+            registered = register_discovered_model_resources(repository)
+            if registered:
+                report.django_model_resources.extend(registered)
+                report.django_models = [label for label, _ in list_registered_models()]
+        except Exception as exc:
+            report.errors.append(f"django_model_resources: {exc}")
 
     return report
 

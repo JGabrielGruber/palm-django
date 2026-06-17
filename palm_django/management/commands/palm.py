@@ -12,6 +12,7 @@ from django.db import connection
 
 from palm_django import __version__ as palm_django_version
 from palm_django.backends import storage_health_report
+from palm_django.resources.registry import PROVIDER_NAME, list_registered_models
 from palm_django.runtime import bootstrap_palm, get_app, get_host, get_runtime, is_palm_started
 from palm_django.settings import build_palm_settings_dict, get_django_integration_settings
 
@@ -116,6 +117,19 @@ class Command(BaseCommand):
                 for error in discovery.errors:
                     issues.append(f"discovery: {error}")
                 self._kv("discovery errors", self._format_list(discovery.errors))
+            if discovery.django_models:
+                self._section("Django Model Resources")
+                self._kv("provider", PROVIDER_NAME)
+                self._kv("models registered", len(discovery.django_models))
+                for model_label, config in list_registered_models():
+                    self._kv(
+                        model_label,
+                        ", ".join(config.normalized_actions()),
+                    )
+                self._kv(
+                    "resource definitions",
+                    len(discovery.django_model_resources),
+                )
 
         self._section("Catalog")
         flows = app.list_flows()

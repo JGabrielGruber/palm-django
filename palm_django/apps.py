@@ -19,9 +19,11 @@ class PalmDjangoConfig(AppConfig):
 
     def ready(self) -> None:
         from palm_django import checks  # noqa: F401
-        from palm_django.storages import ensure_registered
+        from palm_django.providers import ensure_registered as ensure_provider_registered
+        from palm_django.storages import ensure_registered as ensure_storage_registered
 
-        ensure_registered()
+        ensure_storage_registered()
+        ensure_provider_registered()
 
         if is_migration_command():
             return

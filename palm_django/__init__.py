@@ -47,7 +47,10 @@ from palm_django.settings import (
 __all__ = [
     "__version__",
     "DEFAULT_PALM_SETTINGS",
+    "DjangoModelProvider",
     "DjangoStorageBackend",
+    "PalmResourceModel",
+    "as_palm_resource",
     "bootstrap_palm",
     "build_palm_settings_dict",
     "ensure_registered",
@@ -65,6 +68,9 @@ __all__ = [
 
 _LAZY_EXPORTS = {
     "DjangoStorageBackend": ("palm_django.backends", "DjangoStorageBackend"),
+    "DjangoModelProvider": ("palm_django.providers.provider", "DjangoModelProvider"),
+    "PalmResourceModel": ("palm_django.resources.base", "PalmResourceModel"),
+    "as_palm_resource": ("palm_django.resources.decorator", "as_palm_resource"),
     "storage_health_report": ("palm_django.backends", "storage_health_report"),
     "ensure_registered": ("palm_django.storages", "ensure_registered"),
     "register_django_storage": ("palm_django.storages", "register_django_storage"),

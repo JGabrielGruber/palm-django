@@ -17,3 +17,5 @@ def test_palm_doctor_succeeds() -> None:
     assert "[Django ORM Storage]" in output
     assert "tables ready: yes" in output
     assert "storage backend: django" in output
+    assert "[Django Model Resources]" in output
+    assert "palm_sample.SampleItem" in output

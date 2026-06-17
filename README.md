@@ -97,7 +97,40 @@ Supported hooks (all optional, per app):
 | `palm_definitions`   | `register_commit_handlers()` |
 | `palm`               | same hooks (alternate name) |
 
-### 5. Use Palm in your code
+### 5. Expose Django models as Palm resources
+
+Decorate any model (or set a class-level ``palm_resource`` dict) and palm-django
+auto-registers CRUD resources at bootstrap:
+
+```python
+from django.db import models
+from palm_django import as_palm_resource
+
+@as_palm_resource(actions=["get", "create", "update", "delete", "list"])
+class Order(models.Model):
+    customer_id = models.IntegerField()
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+```
+
+Resource names follow ``{app_label}.{model_name}.{action}`` — e.g.
+``myapp.order.create``. Params bind from Palm state via ``{{ state.pk }}``,
+``{{ state.data }}``, etc.; results promote to ``output_key`` (defaults to the
+model name) in wizard/BT leaves.
+
+```python
+from palm_django import get_app
+
+app = get_app()
+result = app.invoke_resource(
+    "myapp.order.create",
+    state={"data": {"customer_id": 1, "total": "49.99"}},
+)
+```
+
+Manual control remains available via ``register_resources()`` in
+``palm_definitions.py`` for custom ``ResourceDefinition`` objects.
+
+### 6. Use Palm in your code
 
 ```python
 from palm_django import get_host
@@ -114,7 +147,7 @@ from palm_django import get_app
 flows = get_app().list_flows()
 ```
 
-### 6. Run the doctor
+### 7. Run the doctor
 
 ```bash
 python manage.py palm doctor
@@ -137,6 +170,22 @@ Reports versions, runtime health, storage status, discovery results, and catalog
 | `DjangoStorageBackend` | Palm `BaseBackend` backed by Django ORM |
 | `palm_atomic()` | Context manager for transactional Palm + Django writes |
 | `storage_health_report()` | ORM table readiness and row counts |
+| `as_palm_resource` | Decorator to expose a Django model as Palm resources |
+| `DjangoModelProvider` | Palm provider (`django_model`) backing ORM CRUD |
+| `PalmResourceModel` | Optional base class for class-level ``palm_resource`` config |
+
+## Django model resources
+
+| Action | Params | State binding examples |
+|--------|--------|------------------------|
+| `get` | `model`, `pk` (or custom `lookup_field`) | `state.pk` |
+| `list` | `model`, `filters`, `order_by`, `limit` | `state.filters` |
+| `create` | `model`, `data` | `state.data` |
+| `update` | `model`, `pk`, `data` | `state.pk`, `state.data` |
+| `delete` | `model`, `pk` | `state.pk` |
+
+Provider registry key: **`django_model`**. Mutating actions run inside
+``transaction.atomic()``.
 
 ## Storage
 
@@ -195,7 +244,6 @@ pytest
 
 ## Roadmap
 
-- `DjangoModelProvider` — any model as a Palm Resource
 - Django Admin integration for Palm models
 - `python manage.py palm run` and additional commands
 
