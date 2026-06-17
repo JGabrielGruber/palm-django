@@ -26,8 +26,10 @@ class PalmDjangoConfig(AppConfig):
         ensure_provider_registered()
 
         from palm_django.admin import register_admin_models
+        from palm_django.signals import connect_model_save_signals
 
         register_admin_models()
+        connect_model_save_signals()
 
         if is_migration_command():
             return

@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 from django.apps import apps
-from django.db import models, transaction
+from django.db import models
 from palm.core.resource.base_provider import BaseProvider
 from palm.core.resource.result import (
     ProviderActionDescriptor,
@@ -18,6 +18,8 @@ from palm.core.resource.result import (
 
 from palm_django.resources.registry import PROVIDER_NAME
 from palm_django.resources.serializer import serialize_instance
+from palm_django.signals import emit_resource_invoked
+from palm_django.transactions import django_atomic, palm_mutation
 
 READ_ACTIONS = frozenset({"get", "list", "fetch"})
 MUTATING_ACTIONS = frozenset({"create", "update", "delete"})
@@ -103,7 +105,15 @@ class DjangoModelProvider(BaseProvider):
                 lookup_value = bound.get(lookup_field) or bound.get("resource_id")
                 if lookup_value is not None:
                     metadata["resource_id"] = str(lookup_value)
-            return ProviderResult.ok(data, **metadata)
+            result = ProviderResult.ok(data, **metadata)
+            emit_resource_invoked(
+                provider=self.name,
+                action=normalized,
+                model_label=model._meta.label,
+                params=bound,
+                result=result,
+            )
+            return result
         except Exception as exc:
             return ProviderResult.fail(
                 str(exc),
@@ -208,7 +218,7 @@ class DjangoModelProvider(BaseProvider):
         fields: tuple[str, ...] | None,
     ) -> dict[str, Any]:
         data = self._coerce_data(params.get("data", {}))
-        with transaction.atomic():
+        with palm_mutation(), django_atomic():
             instance = model.objects.create(**data)
         return serialize_instance(instance, fields=fields)
 
@@ -222,7 +232,7 @@ class DjangoModelProvider(BaseProvider):
     ) -> dict[str, Any]:
         lookup_value = self._lookup_value(params, lookup_field)
         data = self._coerce_data(params.get("data", {}))
-        with transaction.atomic():
+        with palm_mutation(), django_atomic():
             instance = model.objects.get(**{lookup_field: lookup_value})
             for key, value in data.items():
                 setattr(instance, key, value)
@@ -237,6 +247,6 @@ class DjangoModelProvider(BaseProvider):
         lookup_field: str,
     ) -> dict[str, Any]:
         lookup_value = self._lookup_value(params, lookup_field)
-        with transaction.atomic():
+        with palm_mutation(), django_atomic():
             deleted, _details = model.objects.filter(**{lookup_field: lookup_value}).delete()
         return {"deleted": deleted, lookup_field: lookup_value, "model": model._meta.label}

@@ -53,6 +53,7 @@ __all__ = [
     "as_palm_resource",
     "bootstrap_palm",
     "build_palm_settings_dict",
+    "django_atomic",
     "ensure_registered",
     "get_app",
     "get_django_integration_settings",
@@ -61,6 +62,8 @@ __all__ = [
     "get_runtime",
     "is_palm_started",
     "palm_atomic",
+    "palm_model_saved",
+    "palm_resource_invoked",
     "register_django_storage",
     "shutdown_palm",
     "storage_health_report",
@@ -75,6 +78,9 @@ _LAZY_EXPORTS = {
     "ensure_registered": ("palm_django.storages", "ensure_registered"),
     "register_django_storage": ("palm_django.storages", "register_django_storage"),
     "palm_atomic": ("palm_django.transactions", "palm_atomic"),
+    "django_atomic": ("palm_django.transactions", "django_atomic"),
+    "palm_resource_invoked": ("palm_django.signals", "palm_resource_invoked"),
+    "palm_model_saved": ("palm_django.signals", "palm_model_saved"),
 }
 
 

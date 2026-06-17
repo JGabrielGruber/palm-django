@@ -71,7 +71,34 @@ def test_palm_doctor_lists_operator_tools() -> None:
     call_command("palm", "doctor", stdout=out)
     output = out.getvalue()
     assert "[Operator Tools]" in output
-    assert "doctor, run, flow, instance, resource" in output
+    assert "doctor, quickstart, run, flow, instance, resource" in output
+    assert "item_wizard" in output or "wizard flows" in output
+
+
+@pytest.mark.django_db
+def test_palm_quickstart_shows_guide() -> None:
+    out = StringIO()
+    call_command("palm", "quickstart", stdout=out)
+    assert "Quickstart" in out.getvalue()
+    assert "palm quickstart --app" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_palm_quickstart_for_sample_app() -> None:
+    out = StringIO()
+    call_command("palm", "quickstart", "--app", "palm_sample", stdout=out)
+    output = out.getvalue()
+    assert "palm_sample" in output
+    assert "palm_definitions.py" in output
+
+
+@pytest.mark.django_db
+def test_palm_doctor_json_output() -> None:
+    out = StringIO()
+    call_command("palm", "doctor", "--json", stdout=out)
+    payload = json.loads(out.getvalue())
+    assert payload["ok"] is True
+    assert "sections" in payload
 
 
 @pytest.mark.django_db

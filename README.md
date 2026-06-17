@@ -2,7 +2,7 @@
 
 First-class [Django](https://www.djangoproject.com/) integration for [Palm Engine](https://palmengine.org) — the Python-first Behavior Tree orchestrator.
 
-Turn Palm into a natural part of any Django project: bootstrap on app `ready()`, `PALM_*` settings bridge, auto-discovery of definitions from your apps, and `manage.py palm doctor` for health checks.
+Turn Palm into a natural part of any Django project: bootstrap on app `ready()`, `PALM_*` settings bridge, auto-discovery of definitions from your apps, Django ORM storage, model resources, signals, transactional bridging, and `manage.py palm` operator commands.
 
 ## Requirements
 
@@ -66,7 +66,15 @@ PALM_DISCOVERY_MODULES = ("palm_definitions", "palm")
 
 Defaults are tuned for Django projects (no bundled Palm examples, lightweight startup).
 
-### 4. Register definitions in your apps
+### 4. Scaffold with quickstart (optional)
+
+```bash
+python manage.py palm quickstart
+python manage.py palm quickstart --app myapp
+python manage.py palm quickstart --app myapp --write   # writes myapp/palm_definitions.py
+```
+
+### 5. Register definitions in your apps
 
 Create `myapp/palm_definitions.py`:
 
@@ -80,8 +88,8 @@ def register_definitions(repository: DefinitionRepository) -> None:
         FlowDefinition(
             id="hello_flow",
             name="hello_flow",
-            pattern="sequence",
-            options={},
+            pattern="dag",
+            options={"name": "hello_flow"},
         )
     )
 ```
@@ -97,10 +105,9 @@ Supported hooks (all optional, per app):
 | `palm_definitions`   | `register_commit_handlers()` |
 | `palm`               | same hooks (alternate name) |
 
-### 5. Expose Django models as Palm resources
+### 6. Expose Django models as Palm resources
 
-Decorate any model (or set a class-level ``palm_resource`` dict) and palm-django
-auto-registers CRUD resources at bootstrap:
+Decorate any model (or set a class-level ``palm_resource`` dict) and palm-django auto-registers CRUD resources at bootstrap:
 
 ```python
 from django.db import models
@@ -127,16 +134,57 @@ result = app.invoke_resource(
 )
 ```
 
-Manual control remains available via ``register_resources()`` in
-``palm_definitions.py`` for custom ``ResourceDefinition`` objects.
+### 7. Wizard + Django model resources
 
-### 6. Use Palm in your code
+Use Palm 0.12 ``step_kind: resource`` with ``resource_ref`` pointing at your auto-registered model resources:
 
 ```python
-from palm_django import get_host
+FlowDefinition(
+    id="flow-onboard-order",
+    name="onboard_order",
+    pattern="wizard",
+    options={
+        "include_summary": True,
+        "steps": [
+            {
+                "slug": "customer_id",
+                "title": "Customer",
+                "prompt": "Enter customer id",
+                "validation": [{"rule": "not_empty"}],
+            },
+            {
+                "slug": "create-order",
+                "title": "Create order",
+                "step_kind": "resource",
+                "resource_ref": "myapp.order.create",
+                "action": "create",
+                "params": {
+                    "data": {
+                        "customer_id": "{{ state.customer_id }}",
+                        "total": "{{ state.total }}",
+                    }
+                },
+                "output_key": "order",
+            },
+        ],
+    },
+)
+```
+
+See `tests/palm_sample/palm_definitions.py` for a full working example (`item_wizard`).
+
+### 8. Use Palm in your code
+
+```python
+from palm_django import get_host, palm_atomic
 
 def start_onboarding(user_id: str):
     return get_host().submit_flow("onboard", metadata={"user_id": user_id})
+
+# Roll back Palm storage + ORM writes together
+with palm_atomic():
+    order = Order.objects.create(customer_id=1, total="10.00")
+    get_host().submit_flow("fulfill_order", metadata={"order_id": order.pk})
 ```
 
 Or access the infrastructure layer directly:
@@ -147,11 +195,15 @@ from palm_django import get_app
 flows = get_app().list_flows()
 ```
 
-### 7. Operator commands
+### 9. Operator commands
 
 ```bash
-# Health check
+# Health check (human-readable or JSON)
 python manage.py palm doctor
+python manage.py palm doctor --json
+
+# Scaffold snippets
+python manage.py palm quickstart --app myapp
 
 # Start a flow or process (auto-detects kind)
 python manage.py palm run sample_flow
@@ -173,7 +225,7 @@ python manage.py palm instance resume <instance_id>
 
 Commands bootstrap Palm automatically and run against the active Django database.
 
-### 8. Django Admin
+### 10. Django Admin
 
 Add `django.contrib.admin` to `INSTALLED_APPS` to inspect Palm persistence models:
 
@@ -199,9 +251,12 @@ python manage.py palm doctor   # confirms admin registration status
 | `build_palm_settings_dict()` | Raw merged settings dict |
 | `DjangoStorageBackend` | Palm `BaseBackend` backed by Django ORM |
 | `palm_atomic()` | Context manager for transactional Palm + Django writes |
+| `django_atomic()` | Join outer `atomic()` without redundant savepoints |
 | `storage_health_report()` | ORM table readiness and row counts |
 | `as_palm_resource` | Decorator to expose a Django model as Palm resources |
 | `DjangoModelProvider` | Palm provider (`django_model`) backing ORM CRUD |
+| `palm_resource_invoked` | Signal after successful provider invocation |
+| `palm_model_saved` | Signal when a decorated model is saved via ORM |
 | `PalmResourceModel` | Optional base class for class-level ``palm_resource`` config |
 
 ## Django model resources
@@ -214,8 +269,29 @@ python manage.py palm doctor   # confirms admin registration status
 | `update` | `model`, `pk`, `data` | `state.pk`, `state.data` |
 | `delete` | `model`, `pk` | `state.pk` |
 
-Provider registry key: **`django_model`**. Mutating actions run inside
-``transaction.atomic()``.
+Provider registry key: **`django_model`**. Mutating actions join the current Django transaction when one is active.
+
+## Signals
+
+Connect to Palm lifecycle events in your Django apps:
+
+```python
+from django.dispatch import receiver
+from palm_django import palm_model_saved, palm_resource_invoked
+
+
+@receiver(palm_resource_invoked)
+def on_resource_invoked(sender, provider, action, model_label, params, result, **kwargs):
+    audit_log.info("palm %s %s on %s", provider, action, model_label)
+
+
+@receiver(palm_model_saved)
+def on_model_saved(sender, instance, created, model_label, **kwargs):
+    if created:
+        notify_team(instance)
+```
+
+`palm_model_saved` fires for direct ORM saves on decorated models. Saves performed inside Palm provider mutations emit `palm_resource_invoked` instead (no duplicate model signal).
 
 ## Storage
 
@@ -229,14 +305,17 @@ When `palm_django` is installed, **`django` is the default `storage_backend`**. 
 
 Override with `PALM_STORAGE_BACKEND = "memory"` or `"filesystem"` when needed.
 
-Wrap multi-step Django + Palm work in a single transaction:
+### Transaction bridging
+
+`palm_atomic()` and internal `django_atomic()` join an existing `transaction.atomic()` block instead of opening redundant savepoints. Palm storage writes and model provider mutations roll back with surrounding Django work:
 
 ```python
-from palm_django import get_host, palm_atomic
+from django.db import transaction
+from palm_django import get_app, palm_atomic
 
-with palm_atomic():
-    order = Order.objects.create(...)
-    get_host().submit_flow("fulfill_order", metadata={"order_id": order.pk})
+with transaction.atomic():
+    app.invoke_resource("myapp.order.create", state={...})
+    # raises → ORM row and Palm KV writes roll back together
 ```
 
 ## Settings reference
@@ -262,6 +341,36 @@ All fields from [`PalmSettings`](https://github.com/JGabrielGruber/palmengine) a
 | `PALM_DISCOVER_RESOURCES` | `True` | Call `register_resources` hooks |
 | `PALM_DISCOVER_COMMIT_HANDLERS` | `True` | Call `register_commit_handlers` hooks |
 
+## Common patterns
+
+| Goal | Approach |
+|------|----------|
+| CRUD from flows/wizards | `@as_palm_resource` + `step_kind: resource` |
+| Custom resource logic | `register_resources()` with `ResourceDefinition` |
+| Atomic business transaction | `with palm_atomic():` around ORM + Palm calls |
+| React to Palm writes | `@receiver(palm_resource_invoked)` |
+| React to direct ORM saves | `@receiver(palm_model_saved)` |
+| Ops / debugging | `python manage.py palm doctor` |
+| New project bootstrap | `python manage.py palm quickstart --app myapp` |
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `storage tables are missing` | `python manage.py migrate palm_django` |
+| `ApplicationHost is not started` | Run migrations; check `PALM_AUTO_START`; run `palm doctor` |
+| Resource not found | Use `palm resource list`; names are `{app_label}.{model}.{action}` |
+| `Unknown Django model` | Use `app_label.ModelName` (e.g. `myapp.Order`), not dotted module path |
+| Wizard resource step fails | Use `step_kind: resource` + `resource_ref`; set step `action` (e.g. `create`) — defaults to `fetch` if omitted |
+| Flow not listed | Add `myapp/palm_definitions.py` with `register_definitions()` |
+| Admin models missing | Add `django.contrib.admin` to `INSTALLED_APPS` |
+| DB access during app init warning | Harmless during bootstrap before migrations; disappears after migrate |
+
+```bash
+python manage.py palm doctor        # full report + next-step tips
+python manage.py palm doctor --json # machine-readable output
+```
+
 ## Development
 
 ```bash
@@ -270,12 +379,10 @@ cd palm-django
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
+ruff check .
 ```
 
-## Roadmap
-
-- Django Admin integration for Palm models
-- `python manage.py palm run` and additional commands
+The `tests/palm_sample/` app demonstrates discovery, model resources, wizard flows, commands, admin, signals, and transaction bridging.
 
 ## License
 

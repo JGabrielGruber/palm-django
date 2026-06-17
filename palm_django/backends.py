@@ -8,12 +8,13 @@ import logging
 import threading
 from typing import Any
 
-from django.db import connection, transaction
+from django.db import connection
 from palm.core.exceptions import ConfigurationError
 from palm.core.storage import BaseBackend
 
 from palm_django.models import PalmDefinition, PalmProcessInstance, PalmStorageEntry
 from palm_django.storage_keys import namespace_for_key, parse_storage_key
+from palm_django.transactions import django_atomic
 
 logger = logging.getLogger(__name__)
 
@@ -40,19 +41,19 @@ class DjangoStorageBackend(BaseBackend):
     def get(self, key: str) -> Any | None:
         self.ensure_open()
         with self._lock:
-            with transaction.atomic():
+            with django_atomic():
                 return self._get_unlocked(key)
 
     def set(self, key: str, value: Any) -> None:
         self.ensure_open()
         with self._lock:
-            with transaction.atomic():
+            with django_atomic():
                 self._set_unlocked(key, value)
 
     def delete(self, key: str) -> None:
         self.ensure_open()
         with self._lock:
-            with transaction.atomic():
+            with django_atomic():
                 self._delete_unlocked(key)
 
     def close(self) -> None:

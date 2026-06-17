@@ -13,7 +13,8 @@ def test_palm_doctor_succeeds() -> None:
     output = out.getvalue()
     assert "All checks passed" in output
     assert "[Catalog]" in output
-    assert "flow definitions: 1" in output
+    assert "flow definitions: 2" in output
+    assert "item_wizard" in output
     assert "[Django ORM Storage]" in output
     assert "tables ready: yes" in output
     assert "storage backend: django" in output
