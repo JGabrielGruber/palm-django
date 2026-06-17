@@ -5,6 +5,9 @@ Django AppConfig — wires Palm Engine into the Django application lifecycle.
 from __future__ import annotations
 
 from django.apps import AppConfig
+from palm.core.exceptions import ConfigurationError
+
+from palm_django._django_compat import is_migration_command
 
 
 class PalmDjangoConfig(AppConfig):
@@ -16,6 +19,17 @@ class PalmDjangoConfig(AppConfig):
 
     def ready(self) -> None:
         from palm_django import checks  # noqa: F401
+        from palm_django.storages import ensure_registered
+
+        ensure_registered()
+
+        if is_migration_command():
+            return
+
         from palm_django.runtime import bootstrap_palm
 
-        bootstrap_palm()
+        try:
+            bootstrap_palm()
+        except ConfigurationError as exc:
+            if "storage tables are missing" not in str(exc):
+                raise

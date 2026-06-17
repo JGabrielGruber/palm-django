@@ -37,7 +37,7 @@ _DJANGO_SETTING_NAMES = frozenset(
 
 DEFAULT_PALM_SETTINGS: dict[str, Any] = {
     "load_example_definitions": False,
-    "storage_backend": "memory",
+    "storage_backend": "django",
     "host_profile": "all_in_one",
     "default_scheduler": "inline",
     "rebuild_projections_on_startup": False,

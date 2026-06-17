@@ -37,7 +37,15 @@ INSTALLED_APPS = [
 
 On startup, `palm_django` bootstraps a process-wide `ApplicationHost` and scans your Django apps for Palm hooks.
 
-### 2. Configure Palm (optional)
+### 2. Run migrations
+
+Django ORM is the default storage backend. Apply palm-django tables before first use:
+
+```bash
+python manage.py migrate palm_django
+```
+
+### 3. Configure Palm (optional)
 
 Use a `PALM` dict and/or individual `PALM_*` settings. Keys accept either `STORAGE_BACKEND` (Django style) or `storage_backend` (Palm style).
 
@@ -45,7 +53,8 @@ Use a `PALM` dict and/or individual `PALM_*` settings. Keys accept either `STORA
 # settings.py
 
 PALM = {
-    "STORAGE_BACKEND": "memory",
+    # Default is django ORM — override only when needed:
+    # "STORAGE_BACKEND": "memory",
     "LOAD_EXAMPLE_DEFINITIONS": False,
     "HOST_PROFILE": "all_in_one",
 }
@@ -57,7 +66,7 @@ PALM_DISCOVERY_MODULES = ("palm_definitions", "palm")
 
 Defaults are tuned for Django projects (no bundled Palm examples, lightweight startup).
 
-### 3. Register definitions in your apps
+### 4. Register definitions in your apps
 
 Create `myapp/palm_definitions.py`:
 
@@ -88,7 +97,7 @@ Supported hooks (all optional, per app):
 | `palm_definitions`   | `register_commit_handlers()` |
 | `palm`               | same hooks (alternate name) |
 
-### 4. Use Palm in your code
+### 5. Use Palm in your code
 
 ```python
 from palm_django import get_host
@@ -105,7 +114,7 @@ from palm_django import get_app
 flows = get_app().list_flows()
 ```
 
-### 5. Run the doctor
+### 6. Run the doctor
 
 ```bash
 python manage.py palm doctor
@@ -125,6 +134,31 @@ Reports versions, runtime health, storage status, discovery results, and catalog
 | `is_palm_started()` | Whether the host is running |
 | `get_palm_settings()` | `PalmSettings` built from Django settings |
 | `build_palm_settings_dict()` | Raw merged settings dict |
+| `DjangoStorageBackend` | Palm `BaseBackend` backed by Django ORM |
+| `palm_atomic()` | Context manager for transactional Palm + Django writes |
+| `storage_health_report()` | ORM table readiness and row counts |
+
+## Storage
+
+When `palm_django` is installed, **`django` is the default `storage_backend`**. Palm's key-value contract is preserved:
+
+| Palm key pattern | Django model |
+|------------------|--------------|
+| `palm:definitions:{kind}:{id}` | `PalmDefinition` |
+| `palm:instances:{instance_id}` | `PalmProcessInstance` (snapshots + status history in `data`) |
+| Indexes, projections, outbox, other keys | `PalmStorageEntry` |
+
+Override with `PALM_STORAGE_BACKEND = "memory"` or `"filesystem"` when needed.
+
+Wrap multi-step Django + Palm work in a single transaction:
+
+```python
+from palm_django import get_host, palm_atomic
+
+with palm_atomic():
+    order = Order.objects.create(...)
+    get_host().submit_flow("fulfill_order", metadata={"order_id": order.pk})
+```
 
 ## Settings reference
 
@@ -134,7 +168,7 @@ All fields from [`PalmSettings`](https://github.com/JGabrielGruber/palmengine) a
 
 | Key | Default (Django) | Notes |
 |-----|------------------|-------|
-| `storage_backend` | `memory` | Django ORM backend coming in a future release |
+| `storage_backend` | `django` | Django ORM via `palm_django` models |
 | `load_example_definitions` | `False` | Avoid Palm demo definitions in production |
 | `host_profile` | `all_in_one` | Collapsed embedded runtime |
 | `default_scheduler` | `inline` | Synchronous in-process execution |
@@ -161,10 +195,8 @@ pytest
 
 ## Roadmap
 
-- Django ORM storage backend for Palm (jobs, instances, snapshots)
 - `DjangoModelProvider` — any model as a Palm Resource
-- Django Admin integration
-- Transaction bridging (`atomic()` support)
+- Django Admin integration for Palm models
 - `python manage.py palm run` and additional commands
 
 ## License

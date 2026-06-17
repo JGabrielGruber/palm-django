@@ -11,6 +11,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
 
 from palm_django import __version__ as palm_django_version
+from palm_django.backends import storage_health_report
 from palm_django.runtime import bootstrap_palm, get_app, get_host, get_runtime, is_palm_started
 from palm_django.settings import build_palm_settings_dict, get_django_integration_settings
 
@@ -82,6 +83,20 @@ class Command(BaseCommand):
         self._kv("primary runtime", app.primary_name or "(none)")
         self._kv("storage backend", backend_name)
         self._kv("storage open", "yes" if backend_open else "no")
+        self._kv("storage durable", "yes" if backend_name == "django" else "no")
+
+        storage_report = storage_health_report()
+        self._section("Django ORM Storage")
+        self._kv("tables ready", "yes" if storage_report["tables_ready"] else "no")
+        if storage_report["missing_tables"]:
+            for table in storage_report["missing_tables"]:
+                issues.append(f"missing storage table: {table}")
+            self._kv("missing tables", self._format_list(storage_report["missing_tables"]))
+        counts = storage_report["counts"]
+        if counts["definitions"] is not None:
+            self._kv("orm definition rows", counts["definitions"])
+            self._kv("orm instance rows", counts["instances"])
+            self._kv("orm kv rows", counts["kv_entries"])
 
         self._section("Django Integration")
         self._kv("auto_start", integration["auto_start"])

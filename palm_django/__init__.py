@@ -2,7 +2,7 @@
 palm-django — first-class Django integration for Palm Engine.
 
 Add ``palm_django`` to ``INSTALLED_APPS`` to bootstrap a process-wide
-:class:`~palm.app.host.ApplicationHost` and auto-discover Palm definitions
+:class:`~palm.app.host.ApplicationHost`` and auto-discover Palm definitions
 from your Django apps.
 
 Quick start::
@@ -14,7 +14,6 @@ Quick start::
     ]
 
     PALM = {
-        "STORAGE_BACKEND": "memory",
         "LOAD_EXAMPLE_DEFINITIONS": False,
     }
 
@@ -25,6 +24,8 @@ Quick start::
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 __version__ = "0.1.0"
 
@@ -46,15 +47,38 @@ from palm_django.settings import (
 __all__ = [
     "__version__",
     "DEFAULT_PALM_SETTINGS",
+    "DjangoStorageBackend",
     "bootstrap_palm",
     "build_palm_settings_dict",
+    "ensure_registered",
     "get_app",
     "get_django_integration_settings",
     "get_host",
     "get_palm_settings",
     "get_runtime",
     "is_palm_started",
+    "palm_atomic",
+    "register_django_storage",
     "shutdown_palm",
+    "storage_health_report",
 ]
+
+_LAZY_EXPORTS = {
+    "DjangoStorageBackend": ("palm_django.backends", "DjangoStorageBackend"),
+    "storage_health_report": ("palm_django.backends", "storage_health_report"),
+    "ensure_registered": ("palm_django.storages", "ensure_registered"),
+    "register_django_storage": ("palm_django.storages", "register_django_storage"),
+    "palm_atomic": ("palm_django.transactions", "palm_atomic"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_EXPORTS:
+        module_path, attr = _LAZY_EXPORTS[name]
+        import importlib
+
+        return getattr(importlib.import_module(module_path), attr)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 default_app_config = "palm_django.apps.PalmDjangoConfig"

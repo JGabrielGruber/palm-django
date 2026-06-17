@@ -14,3 +14,6 @@ def test_palm_doctor_succeeds() -> None:
     assert "All checks passed" in output
     assert "[Catalog]" in output
     assert "flow definitions: 1" in output
+    assert "[Django ORM Storage]" in output
+    assert "tables ready: yes" in output
+    assert "storage backend: django" in output

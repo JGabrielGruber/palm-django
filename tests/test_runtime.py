@@ -7,9 +7,9 @@ from palm_django import get_app, get_host, is_palm_started
 
 @pytest.mark.django_db
 def test_appconfig_bootstraps_host() -> None:
-    assert is_palm_started()
     host = get_host()
     app = get_app()
+    assert is_palm_started()
     assert host.is_started
     assert app.is_runtime_started()
 

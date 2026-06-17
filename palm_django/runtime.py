@@ -59,15 +59,22 @@ class PalmRuntime:
     ) -> ApplicationHost:
         """Create (and optionally start) the process-wide ApplicationHost."""
         with self._lock:
-            if self._host is not None:
+            if self._host is not None and self._started:
                 return self._host
+
+            if self._host is not None and not self._started:
+                if self._host.is_started:
+                    self._host.shutdown()
+                self._host = None
 
             palm_settings = settings or get_palm_settings()
             integration = get_django_integration_settings()
             should_start = integration["auto_start"] if auto_start is None else auto_start
 
-            self._host = ApplicationHost(settings=palm_settings)
-            if should_start:
+            if self._host is None:
+                self._host = ApplicationHost(settings=palm_settings)
+
+            if should_start and not self._started:
                 self._host.start(**start_options)
                 self._started = True
                 self._discovery = discover_and_register(
@@ -95,19 +102,21 @@ def get_runtime() -> PalmRuntime:
     return _runtime
 
 
+def bootstrap_palm(**options: Any) -> ApplicationHost:
+    """Bootstrap the process-wide Palm host (idempotent)."""
+    return _runtime.bootstrap(**options)
+
+
 def get_host() -> ApplicationHost:
-    """Return the process-wide ApplicationHost (must be bootstrapped)."""
+    """Return the process-wide ApplicationHost, bootstrapping lazily if needed."""
+    if not _runtime.is_started:
+        bootstrap_palm()
     return _runtime.host
 
 
 def get_app() -> PalmApp:
-    """Return the PalmApp infrastructure layer from the active host."""
-    return _runtime.app
-
-
-def bootstrap_palm(**options: Any) -> ApplicationHost:
-    """Bootstrap the process-wide Palm host (idempotent)."""
-    return _runtime.bootstrap(**options)
+    """Return the PalmApp infrastructure layer, bootstrapping lazily if needed."""
+    return get_host().app
 
 
 def shutdown_palm() -> None:

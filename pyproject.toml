@@ -76,7 +76,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "RUF"]
-ignore = ["E501"]
+ignore = ["E501", "RUF012"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["palm_django"]

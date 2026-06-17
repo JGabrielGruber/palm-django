@@ -10,7 +10,7 @@ from palm_django.settings import build_palm_settings_dict, get_django_integratio
 def test_build_palm_settings_uses_defaults() -> None:
     config = build_palm_settings_dict()
     assert config["load_example_definitions"] is False
-    assert config["storage_backend"] == "memory"
+    assert config["storage_backend"] == "django"
 
 
 @override_settings(
