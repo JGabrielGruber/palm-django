@@ -147,13 +147,43 @@ from palm_django import get_app
 flows = get_app().list_flows()
 ```
 
-### 7. Run the doctor
+### 7. Operator commands
 
 ```bash
+# Health check
 python manage.py palm doctor
+
+# Start a flow or process (auto-detects kind)
+python manage.py palm run sample_flow
+python manage.py palm flow start onboard --metadata '{"user_id": 42}'
+
+# Inspect catalog
+python manage.py palm flow list
+python manage.py palm instance list
+python manage.py palm instance list --all
+python manage.py palm resource list
+
+# Invoke a resource with state binding
+python manage.py palm resource invoke myapp.order.create \
+  --state '{"data": {"customer_id": 1, "total": "10.00"}}'
+
+# Resume a persisted instance
+python manage.py palm instance resume <instance_id>
 ```
 
-Reports versions, runtime health, storage status, discovery results, and catalog counts.
+Commands bootstrap Palm automatically and run against the active Django database.
+
+### 8. Django Admin
+
+Add `django.contrib.admin` to `INSTALLED_APPS` to inspect Palm persistence models:
+
+- **Palm definitions** — browse flows/processes/resources; admin action **Start flow**
+- **Palm process instances** — browse instances; admin action **Resume**
+- **Palm storage entries** — raw KV rows (projections, indexes, outbox)
+
+```bash
+python manage.py palm doctor   # confirms admin registration status
+```
 
 ## Public API
 

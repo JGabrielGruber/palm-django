@@ -19,3 +19,4 @@ def test_palm_doctor_succeeds() -> None:
     assert "storage backend: django" in output
     assert "[Django Model Resources]" in output
     assert "palm_sample.SampleItem" in output
+    assert "[Operator Tools]" in output

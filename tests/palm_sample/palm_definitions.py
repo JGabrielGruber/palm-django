@@ -9,6 +9,7 @@ def register_definitions(repository: DefinitionRepository) -> None:
         FlowDefinition(
             id="sample_flow",
             name="sample_flow",
-            pattern="sequence",
+            pattern="dag",
+            options={"name": "sample_flow"},
         )
     )

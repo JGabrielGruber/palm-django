@@ -25,6 +25,10 @@ class PalmDjangoConfig(AppConfig):
         ensure_storage_registered()
         ensure_provider_registered()
 
+        from palm_django.admin import register_admin_models
+
+        register_admin_models()
+
         if is_migration_command():
             return
 
