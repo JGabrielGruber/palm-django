@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "palm-django"
+version = "0.1.0"
+description = "First-class Django integration for Palm Engine — ORM storage, auto-discovery, and management commands"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "José Gabriel Gruber"},
+]
+keywords = [
+    "palm",
+    "palmengine",
+    "django",
+    "orchestration",
+    "workflow",
+    "behavior-tree",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+dependencies = [
+    "django>=4.2,<6.0",
+    "palmengine>=0.12.9,<0.13.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0,<10.0",
+    "pytest-django>=4.9,<5.0",
+    "ruff>=0.4,<0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0,<10.0",
+    "pytest-django>=4.9,<5.0",
+    "ruff>=0.4,<0.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/JGabrielGruber/palm-django"
+Repository = "https://github.com/JGabrielGruber/palm-django"
+Documentation = "https://github.com/JGabrielGruber/palm-django#readme"
+
+[tool.hatch.build.targets.wheel]
+packages = ["palm_django"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "palm_django/",
+    "tests/",
+    "README.md",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["palm_django"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
+addopts = "-ra -q"
+testpaths = ["tests"]
