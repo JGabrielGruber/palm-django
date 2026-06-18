@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "palm-django"
-version = "0.8.0"
+version = "0.8.1"
 description = "First-class Django integration for Palm Engine — ORM storage, auto-discovery, and management commands"
 readme = "README.md"
 license = {text = "MIT"}
@@ -29,6 +29,7 @@ classifiers = [
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 5.1",
     "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -36,12 +37,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = [
-    "django>=4.2,<6.0",
+    "django>=4.2",
     "palmengine>=0.12.9,<0.13.0",
 ]
 
