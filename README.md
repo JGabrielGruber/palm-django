@@ -288,6 +288,55 @@ python manage.py palm doctor   # confirms admin registration status
 
 Provider registry key: **`django_model`**. Mutating actions join the current Django transaction when one is active.
 
+### Auto-generated schemas
+
+Enable Palm-compatible `DictStateSchema` documents from Django fields with `schema=True`:
+
+```python
+@as_palm_resource(actions=["create", "get"], schema=True)
+class Order(models.Model):
+    customer_id = models.IntegerField()
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+```
+
+Or via class config:
+
+```python
+class LineItem(models.Model):
+    class PalmResource:
+        actions = ["create"]
+        schema = True
+```
+
+When enabled, palm-django:
+
+- Attaches `input_schema` / `output_schema` to each `ResourceDefinition`
+- Registers reusable `StateSchemaDefinition` entries (`myapp.order.data`, `myapp.order.instance`)
+- Validates `create`/`update` payloads in `DjangoModelProvider` (disable with `schema={"validate": False}`)
+
+Use schema refs in wizard steps:
+
+```python
+{
+    "slug": "order_data",
+    "state_schema_ref": "myapp.order.data",
+}
+```
+
+Programmatic access:
+
+```python
+from palm_django.resources import (
+    get_palm_resource_config,
+    model_data_schema_name,
+    model_to_dict_state_schema,
+)
+
+config = get_palm_resource_config(Order)
+schema = model_to_dict_state_schema(Order, config, writable_only=True)
+ref = model_data_schema_name(Order, config)  # myapp.order.data
+```
+
 ## Signals
 
 Connect to Palm lifecycle events in your Django apps:

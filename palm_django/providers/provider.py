@@ -16,7 +16,8 @@ from palm.core.resource.result import (
     ProviderResult,
 )
 
-from palm_django.resources.registry import PROVIDER_NAME
+from palm_django.resources.registry import PROVIDER_NAME, get_palm_resource_config
+from palm_django.resources.schema import schema_enabled, schema_options, validate_model_data
 from palm_django.resources.serializer import serialize_instance
 from palm_django.signals import emit_resource_invoked
 from palm_django.transactions import django_atomic, palm_mutation
@@ -210,6 +211,22 @@ class DjangoModelProvider(BaseProvider):
 
         return [serialize_instance(item, fields=fields) for item in queryset]
 
+    def _validate_data_if_enabled(
+        self,
+        model: type[models.Model],
+        data: dict[str, Any],
+        *,
+        for_create: bool,
+    ) -> None:
+        config = get_palm_resource_config(model)
+        if config is None or not schema_enabled(config):
+            return
+        if not schema_options(config)["validate"]:
+            return
+        errors = validate_model_data(model, data, config, for_create=for_create)
+        if errors:
+            raise ValueError("; ".join(errors))
+
     def _action_create(
         self,
         model: type[models.Model],
@@ -218,6 +235,7 @@ class DjangoModelProvider(BaseProvider):
         fields: tuple[str, ...] | None,
     ) -> dict[str, Any]:
         data = self._coerce_data(params.get("data", {}))
+        self._validate_data_if_enabled(model, data, for_create=True)
         with palm_mutation(), django_atomic():
             instance = model.objects.create(**data)
         return serialize_instance(instance, fields=fields)
@@ -232,6 +250,7 @@ class DjangoModelProvider(BaseProvider):
     ) -> dict[str, Any]:
         lookup_value = self._lookup_value(params, lookup_field)
         data = self._coerce_data(params.get("data", {}))
+        self._validate_data_if_enabled(model, data, for_create=False)
         with palm_mutation(), django_atomic():
             instance = model.objects.get(**{lookup_field: lookup_value})
             for key, value in data.items():

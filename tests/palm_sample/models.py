@@ -25,3 +25,11 @@ class ManualResourceItem(models.Model):
         "actions": ["get", "list"],
         "output_key": "manual_item",
     }
+
+
+@as_palm_resource(actions=["create", "get"], schema=True)
+class SchemaItem(models.Model):
+    """Model with auto-generated Palm schemas for validation."""
+
+    name = models.CharField(max_length=80)
+    quantity = models.IntegerField(default=0)

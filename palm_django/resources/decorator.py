@@ -23,13 +23,14 @@ def as_palm_resource(
     name_prefix: str | None = None,
     fields: Sequence[str] | None = None,
     extra_params: dict[str, Any] | None = None,
+    schema: bool | dict[str, Any] | None = None,
 ) -> Callable[[_ModelT], _ModelT] | _ModelT:
     """
     Mark a Django model for auto-registration as Palm resources.
 
     Usage::
 
-        @as_palm_resource(actions=["get", "create", "list"])
+        @as_palm_resource(actions=["get", "create", "list"], schema=True)
         class Order(models.Model):
             ...
     """
@@ -42,6 +43,7 @@ def as_palm_resource(
             name_prefix=name_prefix,
             fields=tuple(fields) if fields else None,
             extra_params=dict(extra_params or {}),
+            schema=schema,
         )
         setattr(model_cls, PALM_RESOURCE_ATTR, config)
         return model_cls

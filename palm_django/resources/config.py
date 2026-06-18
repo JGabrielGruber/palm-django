@@ -10,6 +10,16 @@ from typing import Any
 DEFAULT_ACTIONS: tuple[str, ...] = ("get", "create", "update", "delete", "list")
 
 
+def _coerce_schema(value: Any) -> bool | dict[str, Any] | None:
+    if value is None or value is False:
+        return None
+    if value is True:
+        return True
+    if isinstance(value, dict):
+        return dict(value)
+    return bool(value) or None
+
+
 @dataclass(frozen=True)
 class PalmResourceConfig:
     """How a Django model is exposed through Palm resources."""
@@ -20,13 +30,17 @@ class PalmResourceConfig:
     name_prefix: str | None = None
     fields: tuple[str, ...] | None = None
     extra_params: dict[str, Any] = field(default_factory=dict)
+    schema: bool | dict[str, Any] | None = None
 
     @classmethod
     def from_options(cls, options: Any) -> PalmResourceConfig:
         if isinstance(options, cls):
             return options
         if isinstance(options, dict):
-            return cls(**{k: v for k, v in options.items() if k in cls.__dataclass_fields__})
+            payload = {k: v for k, v in options.items() if k in cls.__dataclass_fields__}
+            if "schema" in payload:
+                payload["schema"] = _coerce_schema(payload["schema"])
+            return cls(**payload)
         actions = getattr(options, "actions", None) or DEFAULT_ACTIONS
         return cls(
             actions=tuple(str(item) for item in actions),
@@ -39,6 +53,7 @@ class PalmResourceConfig:
                 else None
             ),
             extra_params=dict(getattr(options, "extra_params", {}) or {}),
+            schema=_coerce_schema(getattr(options, "schema", None)),
         )
 
     def normalized_actions(self) -> tuple[str, ...]:

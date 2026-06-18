@@ -13,12 +13,18 @@ from palm.definitions.resource import ResourceDefinition
 
 from palm_django.resources.config import PalmResourceConfig
 from palm_django.resources.decorator import PALM_RESOURCE_ATTR
+from palm_django.resources.schema import (
+    build_action_input_schema,
+    build_action_output_schema,
+    register_model_schemas,
+    schema_enabled,
+)
 
 PROVIDER_NAME = "django_model"
 
 
 def get_palm_resource_config(model: type[models.Model]) -> PalmResourceConfig | None:
-    """Return Palm resource config from decorator or class-level ``palm_resource``."""
+    """Return Palm resource config from decorator, ``palm_resource``, or ``PalmResource``."""
     direct = getattr(model, PALM_RESOURCE_ATTR, None)
     if direct is not None:
         return PalmResourceConfig.from_options(direct)
@@ -26,6 +32,10 @@ def get_palm_resource_config(model: type[models.Model]) -> PalmResourceConfig | 
     class_option = getattr(model, "palm_resource", None)
     if class_option is not None:
         return PalmResourceConfig.from_options(class_option)
+
+    palm_meta = getattr(model, "PalmResource", None)
+    if palm_meta is not None:
+        return PalmResourceConfig.from_options(palm_meta)
     return None
 
 
@@ -42,6 +52,7 @@ def build_resource_definitions(
     model_label = model._meta.label
     lookup = config.lookup_field
     output_key = config.output_key or model._meta.model_name
+    prefix = config.name_prefix or model._meta.label_lower
     base_params: dict[str, Any] = {"model": model_label, **config.extra_params}
     definitions: list[ResourceDefinition] = []
 
@@ -54,6 +65,13 @@ def build_resource_definitions(
         }
         if config.fields:
             metadata["fields"] = list(config.fields)
+        if schema_enabled(config):
+            metadata["django_schema"] = True
+            metadata["data_schema_ref"] = f"{prefix}.data"
+            metadata["instance_schema_ref"] = f"{prefix}.instance"
+
+        input_schema = build_action_input_schema(model, action, config)
+        output_schema = build_action_output_schema(model, action, config)
 
         if action == "get":
             params[lookup] = f"{{{{ state.{lookup} }}}}"
@@ -76,6 +94,8 @@ def build_resource_definitions(
                 provider=PROVIDER_NAME,
                 action=action,
                 params=params,
+                input_schema=input_schema,
+                output_schema=output_schema,
                 output_key=output_key,
                 metadata=metadata,
             )
@@ -92,6 +112,8 @@ def register_discovered_model_resources(repository: DefinitionRepository) -> lis
         config = get_palm_resource_config(model)
         if config is None:
             continue
+        if schema_enabled(config):
+            register_model_schemas(repository, model, config)
         for resource in build_resource_definitions(model, config):
             repository.register_resource(resource)
             registered.append(resource.name)
