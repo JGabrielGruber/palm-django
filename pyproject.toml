@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "palm-django"
-version = "0.1.0"
+version = "0.8.0"
 description = "First-class Django integration for Palm Engine — ORM storage, auto-discovery, and management commands"
 readme = "README.md"
 license = {text = "MIT"}
@@ -19,9 +19,11 @@ keywords = [
     "orchestration",
     "workflow",
     "behavior-tree",
+    "wizard",
+    "django-orm",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: Django",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
@@ -29,11 +31,13 @@ classifiers = [
     "Framework :: Django :: 5.2",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = [
@@ -54,11 +58,17 @@ dev = [
     "pytest-django>=4.9,<5.0",
     "ruff>=0.4,<0.5",
 ]
+test = [
+    "pytest>=9.0,<10.0",
+    "pytest-django>=4.9,<5.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/JGabrielGruber/palm-django"
-Repository = "https://github.com/JGabrielGruber/palm-django"
 Documentation = "https://github.com/JGabrielGruber/palm-django#readme"
+Repository = "https://github.com/JGabrielGruber/palm-django"
+Issues = "https://github.com/JGabrielGruber/palm-django/issues"
+Changelog = "https://github.com/JGabrielGruber/palm-django/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["palm_django"]
@@ -68,6 +78,8 @@ include = [
     "palm_django/",
     "tests/",
     "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
 ]
 
 [tool.ruff]

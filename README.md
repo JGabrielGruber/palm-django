@@ -1,8 +1,24 @@
 # palm-django
 
+[![PyPI version](https://img.shields.io/pypi/v/palm-django.svg)](https://pypi.org/project/palm-django/)
+[![Python](https://img.shields.io/pypi/pyversions/palm-django.svg)](https://pypi.org/project/palm-django/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 First-class [Django](https://www.djangoproject.com/) integration for [Palm Engine](https://palmengine.org) — the Python-first Behavior Tree orchestrator.
 
-Turn Palm into a natural part of any Django project: bootstrap on app `ready()`, `PALM_*` settings bridge, auto-discovery of definitions from your apps, Django ORM storage, model resources, signals, transactional bridging, and `manage.py palm` operator commands.
+Install with one command, add `palm_django` to `INSTALLED_APPS`, and run flows, wizards, and resources against your existing Django database.
+
+## Features
+
+- **Zero-config bootstrap** — `ApplicationHost` starts on `AppConfig.ready()` with Django-tuned defaults
+- **ORM storage** — Palm definitions, instances, and KV entries persist in Django models
+- **Auto-discovery** — `palm_definitions` / `palm` hooks in each installed app
+- **Model resources** — `@as_palm_resource` exposes CRUD as `{app}.{model}.{action}`
+- **Auto schemas** — optional `schema=True` generates Palm `DictStateSchema` from Django fields
+- **Transactional bridging** — `palm_atomic()` rolls back ORM + Palm writes together
+- **Operator CLI** — `python manage.py palm doctor|server|run|flow|instance|resource|quickstart`
+- **Palm Explorer** — `palm server` serves the SSR hub at `/explorer`
+- **Django Admin** — inspect definitions, instances, and storage; start flows from admin
 
 ## Requirements
 
@@ -16,9 +32,13 @@ Turn Palm into a natural part of any Django project: bootstrap on app `ready()`,
 pip install palm-django
 ```
 
-Or from source:
+This installs **palmengine** (0.12.9+) and **Django** (4.2+) automatically.
+
+From source (development):
 
 ```bash
+git clone https://github.com/JGabrielGruber/palm-django.git
+cd palm-django
 pip install -e ".[dev]"
 ```
 
@@ -451,8 +471,41 @@ pytest
 ruff check .
 ```
 
-The `tests/palm_sample/` app demonstrates discovery, model resources, wizard flows, commands, admin, signals, and transaction bridging.
+The `tests/palm_sample/` app demonstrates discovery, model resources, wizard flows, commands, admin, signals, schemas, and transaction bridging.
+
+## Publishing (maintainers)
+
+Same flow as [palmengine](https://github.com/JGabrielGruber/palmengine): tag → GitHub release → CI publishes to PyPI.
+
+Prerequisites: [uv](https://docs.astral.sh/uv/), [just](https://github.com/casey/just) (optional), and repository secrets `PYPI_TOKEN` / `TEST_PYPI_TOKEN`.
+
+```bash
+# Bump version in pyproject.toml and palm_django/__init__.py; update CHANGELOG.md
+just release-prep              # ruff + pytest + uv build — see RELEASE-0.8.0.md
+
+git add -A
+git commit -m "Release 0.8.0"
+git tag -a v0.8.0 -m "palm-django 0.8.0"
+git push origin master --tags
+```
+
+On GitHub: **Releases → Draft a new release** from tag `v0.8.0`, paste the `[0.8.0]` section from `CHANGELOG.md`, and **Publish release**. The [publish workflow](.github/workflows/publish.yml) uploads to PyPI automatically.
+
+Manual options:
+
+```bash
+just publish-test              # TestPyPI (TEST_PYPI_TOKEN)
+just publish                   # production PyPI (PYPI_TOKEN)
+```
+
+Or trigger **Actions → Publish to PyPI → Run workflow** (`testpypi` or `pypi`) without creating a release.
+
+## Links
+
+- [Palm Engine](https://palmengine.org) · [palmengine on PyPI](https://pypi.org/project/palmengine/)
+- [Repository](https://github.com/JGabrielGruber/palm-django)
+- [Changelog](CHANGELOG.md)
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

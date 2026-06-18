@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import Any
 
-__version__ = "0.1.0"
+__version__ = "0.8.0"
 
 from palm_django.runtime import (
     bootstrap_palm,
