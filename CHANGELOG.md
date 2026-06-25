@@ -6,6 +6,16 @@ All notable changes to palm-django are documented here. The format follows [Keep
 
 _No changes yet._
 
+## [0.9.0] — 2026-06-25
+
+**palmengine 0.13.x support** — requires [Palm Engine](https://palmengine.org) 0.13.13+ (Wizard Experience, ProviderApp framework, `/v1/wizards` REST).
+
+Requires **Python 3.11+**, **Django 4.2+**, and **palmengine 0.13.13+**.
+
+### Changed
+
+- **Dependency** — `palmengine>=0.13.13` (drops 0.12.x compatibility)
+
 ## [0.8.0] — 2026-06-17
 
 **First PyPI release** — production-ready Django integration for [Palm Engine](https://palmengine.org) 0.12.x.

@@ -24,7 +24,7 @@ Install with one command, add `palm_django` to `INSTALLED_APPS`, and run flows, 
 
 - Python 3.11+
 - Django 4.2+
-- [palmengine](https://pypi.org/project/palmengine/) 0.12.9+
+- [palmengine](https://pypi.org/project/palmengine/) 0.13.13+
 
 ## Installation
 
@@ -32,7 +32,7 @@ Install with one command, add `palm_django` to `INSTALLED_APPS`, and run flows, 
 pip install palm-django
 ```
 
-This installs **palmengine** (0.12.9+) and **Django** (4.2+) automatically.
+This installs **palmengine** (0.13.13+) and **Django** (4.2+) automatically.
 
 From source (development):
 

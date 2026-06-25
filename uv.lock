@@ -63,7 +63,7 @@ wheels = [
 
 [[package]]
 name = "palm-django"
-version = "0.8.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "django" },
@@ -90,8 +90,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "django", specifier = ">=4.2,<6.0" },
-    { name = "palmengine", specifier = ">=0.12.9,<0.13.0" },
+    { name = "django", specifier = ">=4.2" },
+    { name = "palmengine", specifier = ">=0.13.13" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0,<10.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0,<10.0" },
     { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9,<5.0" },
@@ -109,16 +109,16 @@ dev = [
 
 [[package]]
 name = "palmengine"
-version = "0.12.9"
+version = "0.13.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/e1/d3abddd567842e6909d97dae1d8a8f98b971aacd92974beeb5c8b9e8f86b/palmengine-0.12.9.tar.gz", hash = "sha256:0384162f0b6c695e2a1c3625fb2be3c4b09b88f13634a4e634b256a5b9086ec6", size = 360025, upload-time = "2026-06-17T20:49:18.309Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/b8/1d06613f8819da3acfc8fb8ee4a3c0e9c9c89a2b95c46c1b804aff187e69/palmengine-0.13.13.tar.gz", hash = "sha256:0f4db116f92a1fdd62dc715e6907f225b8b3d05358843d3aa90bda3a17ab7058", size = 704176, upload-time = "2026-06-25T14:11:24.334Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/66/eb8072aba79739cdc2d9b9e66bc725431a6a05a11c0a708a23b997025991/palmengine-0.12.9-py3-none-any.whl", hash = "sha256:f4df395f3baebbb25d6a2d9b42f5bcd84dfd69bff3a833db86573b8ab9538238", size = 456918, upload-time = "2026-06-17T20:49:19.564Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/90/32d73213bfe599851028e3d54096e93d9990a77bb4845924ab33adc414fa/palmengine-0.13.13-py3-none-any.whl", hash = "sha256:1fe6a47f511fc4a8e6654c599b55cba8c6eae7e39705af4efc77d936e7dc3302", size = 857260, upload-time = "2026-06-25T14:11:22.614Z" },
 ]
 
 [[package]]

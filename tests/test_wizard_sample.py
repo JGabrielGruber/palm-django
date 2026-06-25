@@ -4,7 +4,7 @@ import pytest
 from palm.common.patterns.build_context import PatternBuildContext
 from palm.common.patterns.builder import build_pattern
 from palm.core.behavior_tree import PatternStatus
-from palm.patterns.wizard.keys import WizardKeys
+from palm.patterns.wizard import WizardKeys
 from palm.patterns.wizard.pattern import WizardPattern
 from palm.states import BlackboardState
 
